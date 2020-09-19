@@ -1,0 +1,432 @@
+##Load Files
+
+install.packages("afex")
+install.packages("emmeans")
+install.packages("ggplot2")
+install.packages("psych")
+library(readxl)
+
+library(afex)
+library(emmeans)
+library(ggplot2)
+library(psych)
+library(tidyverse)
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+
+#Load Files
+#Study One: Nonsense
+E1_Across <- read_excel("~Exp1_OrderComparisonAcrossSubs_Average_Spacy.xlsx")
+E1_Last <- read_excel("~Exp1_OrderComparisontoLast_Average_Spacy.xlsx")
+
+names(E1_Across)[2] <- 'ID'
+names(E1_Across)[3] <- 'G0v1'
+names(E1_Across)[4] <- 'G1v2'
+names(E1_Across)[5] <- 'G2v3'
+names(E1_Across)[6] <- 'G3v4'
+names(E1_Across)[7] <- 'G4v5'
+
+names(E1_Last)[2] <- 'ID'
+names(E1_Last)[3] <- 'G0v5'
+names(E1_Last)[4] <- 'G1v5'
+names(E1_Last)[5] <- 'G2v5'
+names(E1_Last)[6] <- 'G3v5'
+names(E1_Last)[7] <- 'G4v5'
+
+E1_Across <- as_tibble(E1_Across)
+E1_Across$ID <- factor(E1_Across$ID)
+
+E1_Last <- as_tibble(E1_Last)
+E1_Last$ID <- factor(E1_Last$ID)
+
+E1_Across_AN <- E1_Across %>%
+  gather(key = "generation", value = "similarity", G0v1, G1v2, G2v3, G3v4, G4v5)
+E1_Across_AN$generation <- factor(E1_Across_AN$generation)
+head(E1_Across_AN)
+
+E1_Last_AN <- E1_Last %>%
+  gather(key = "generation", value = "similarity", G0v5, G1v5, G2v5, G3v5, G4v5)
+E1_Last_AN$generation <- factor(E1_Last_AN$generation)
+head(E1_Last_AN)
+
+#Summary Statistics
+E1_Across_AN %>%
+  group_by(generation) %>%
+  get_summary_stats(similarity, type = "mean_sd")
+
+E1_Last_AN %>%
+  group_by(generation) %>%
+  get_summary_stats(similarity, type = "mean_sd")
+
+#anovas
+
+res.aov <- anova_test(
+  data = E1_Across_AN, dv = similarity, wid = ID,
+  within = generation
+)
+get_anova_table(res.aov)
+
+res.aov <- anova_test(
+  data = E1_Last_AN, dv = similarity, wid = ID,
+  within = generation
+)
+get_anova_table(res.aov)
+
+#pairwise comparisons between generations
+pwc_gen_across <- E1_Across_AN %>%
+  pairwise_t_test(
+    similarity ~ generation, paired = TRUE, 
+    p.adjust.method = "bonferroni"
+  ) %>%
+  select(-df, -statistic, -p) # Remove details
+pwc_gen_across
+
+pwc_gen_last <- E1_Last_AN %>%
+  pairwise_t_test(
+    similarity ~ generation, paired = TRUE, 
+    p.adjust.method = "bonferroni"
+  ) %>%
+  select(-df, -statistic, -p) # Remove details
+pwc_gen_last
+
+
+#Study Two: Canon vs Scrambled Within
+E2_Canon_Across <- read_excel("~Exp2_Canon_OrderComparisonAcrossSubs_Average_Spacy.xlsx")
+E2_NonCanon_Across <- read_excel("~Exp2_NonCanon_OrderComparisonAcrossSubs_Average_Spacy.xlsx")
+E2_Canon_Last <- read_excel("~Exp2_Canon_OrderComparisontoLast_Average_Spacy.xlsx")
+E2_NonCanon_Last <- read_excel("~Exp2_NonCanon_OrderComparisontoLast_Average_Spacy.xlsx")
+Condition<- rep("Canon",nrow(E2_Canon_Across))
+E2_Canon_Across_Temp <- cbind(E2_Canon_Across, Condition)
+E2_Canon_Last_Temp <- cbind(E2_Canon_Last, Condition)
+Condition<- rep("NonCanon",nrow(E2_NonCanon_Across))
+E2_NonCanon_Across_Temp <- cbind(E2_NonCanon_Across, Condition)
+E2_NonCanon_Last_Temp <- cbind(E2_NonCanon_Last, Condition)
+
+E2_Across <- rbind(E2_Canon_Across_Temp, E2_NonCanon_Across_Temp)
+E2_Last <- rbind(E2_Canon_Last_Temp, E2_NonCanon_Last_Temp)
+ID <- c(1:nrow(E2_Across))
+
+E2_Across_Use <- cbind(E2_Across, ID)
+names(E2_Across_Use)[3] <- 'G0v1'
+names(E2_Across_Use)[4] <- 'G1v2'
+names(E2_Across_Use)[5] <- 'G2v3'
+names(E2_Across_Use)[6] <- 'G3v4'
+names(E2_Across_Use)[7] <- 'G4v5'
+
+E2_Last_Use <- cbind(E2_Last, ID)
+names(E2_Last_Use)[3] <- 'G0v5'
+names(E2_Last_Use)[4] <- 'G1v5'
+names(E2_Last_Use)[5] <- 'G2v5'
+names(E2_Last_Use)[6] <- 'G3v5'
+names(E2_Last_Use)[7] <- 'G4v5'
+
+
+E2_Across <- as_tibble(E2_Across_Use)
+E2_Across$ID <- factor(E2_Across$ID)
+
+E2_Last <- as_tibble(E2_Last_Use)
+E2_Last$ID <- factor(E2_Last$ID)
+
+#E2_Across_AN <-aov_car(similarity ~ Condition*generation, data=E2_Across)
+
+
+E2_Across_AN <- E2_Across %>%
+  gather(key = "generation", value = "similarity", G0v1, G1v2, G2v3, G3v4, G4v5)
+E2_Across_AN$generation <- factor(E2_Across_AN$generation)
+head(E2_Across_AN)
+
+E2_Last_AN <- E2_Last %>%
+  gather(key = "generation", value = "similarity", G0v5, G1v5, G2v5, G3v5, G4v5)
+E2_Last_AN$generation <- factor(E2_Last_AN$generation)
+head(E2_Last_AN)
+
+#Summary Statistics
+E2_Across_AN %>%
+  group_by(generation, Condition) %>%
+  get_summary_stats(similarity, type = "mean_sd")
+
+E2_Last_AN %>%
+  group_by(generation, Condition) %>%
+  get_summary_stats(similarity, type = "mean_sd")
+
+#anovas
+
+res.aov <- anova_test(
+  data = E2_Across_AN, dv = similarity, wid = ID,
+  between = Condition, within = generation
+)
+get_anova_table(res.aov)
+
+res.aov <- anova_test(
+  data = E2_Last_AN, dv = similarity, wid = ID,
+  between = Condition, within = generation
+)
+get_anova_table(res.aov)
+
+# Pairwise comparisons between conditions
+pwc_across <- E2_Across_AN %>%
+  group_by(generation) %>%
+  pairwise_t_test(similarity ~ Condition, p.adjust.method = "bonferroni")
+pwc_across
+
+pwc_last <- E2_Last_AN %>%
+  group_by(generation) %>%
+  pairwise_t_test(similarity ~ Condition, p.adjust.method = "bonferroni")
+pwc_last
+
+
+#pairwise comparisons between generations
+pwc_gen_across <- E2_Across_AN %>%
+  group_by(Condition) %>%
+  pairwise_t_test(
+    similarity ~ generation, paired = TRUE, 
+    p.adjust.method = "bonferroni"
+  ) %>%
+  select(-df, -statistic, -p) # Remove details
+pwc_gen_across
+
+pwc_gen_last <- E2_Last_AN %>%
+  group_by(Condition) %>%
+  pairwise_t_test(
+    similarity ~ generation, paired = TRUE, 
+    p.adjust.method = "bonferroni"
+  ) %>%
+  select(-df, -statistic, -p) # Remove details
+pwc_gen_last
+
+
+#Study Three: Canon vs Noncanon Within
+E3_Canon_Across <- read_excel("~Exp3_Canon_OrderComparisonAcrossSubs_Average_Spacy.xlsx")
+E3_NonCanon_Across <- read_excel("~Exp3_NonCanon_OrderComparisonAcrossSubs_Average_Spacy.xlsx")
+E3_Canon_Last <- read_excel("~Exp3_Canon_OrderComparisontoLast_Average_Spacy.xlsx")
+E3_NonCanon_Last <- read_excel("~Exp3_NonCanon_OrderComparisontoLast_Average_Spacy.xlsx")
+Condition<- rep("Canon",nrow(E3_Canon_Across))
+E3_Canon_Across_Temp <- cbind(E3_Canon_Across, Condition)
+E3_Canon_Last_Temp <- cbind(E3_Canon_Last, Condition)
+Condition<- rep("NonCanon",nrow(E3_NonCanon_Across))
+E3_NonCanon_Across_Temp <- cbind(E3_NonCanon_Across, Condition)
+E3_NonCanon_Last_Temp <- cbind(E3_NonCanon_Last, Condition)
+
+E3_Across <- rbind(E3_Canon_Across_Temp, E3_NonCanon_Across_Temp)
+E3_Last <- rbind(E3_Canon_Last_Temp, E3_NonCanon_Last_Temp)
+ID <- c(1:nrow(E3_Across))
+
+E3_Across_Use <- cbind(E3_Across, ID)
+names(E3_Across_Use)[3] <- 'G0v1'
+names(E3_Across_Use)[4] <- 'G1v2'
+names(E3_Across_Use)[5] <- 'G2v3'
+names(E3_Across_Use)[6] <- 'G3v4'
+names(E3_Across_Use)[7] <- 'G4v5'
+
+E3_Last_Use <- cbind(E3_Last, ID)
+names(E3_Last_Use)[3] <- 'G0v1'
+names(E3_Last_Use)[4] <- 'G1v2'
+names(E3_Last_Use)[5] <- 'G2v3'
+names(E3_Last_Use)[6] <- 'G3v4'
+names(E3_Last_Use)[7] <- 'G4v5'
+
+
+E3_Across <- as_tibble(E3_Across_Use)
+E3_Across$ID <- factor(E3_Across$ID)
+
+E3_Last <- as_tibble(E3_Last_Use)
+E3_Last$ID <- factor(E3_Last$ID)
+
+E3_Across_AN <-aov_car(similarity ~ Condition*generation, data=E3_Across)
+
+
+E3_Across_AN <- E3_Across %>%
+  gather(key = "generation", value = "similarity", G0v1, G1v2, G2v3, G3v4, G4v5)
+E3_Across_AN$generation <- factor(E3_Across_AN$generation)
+head(E3_Across_AN)
+
+E3_Last_AN <- E3_Last %>%
+  gather(key = "generation", value = "similarity", G0v1, G1v2, G2v3, G3v4, G4v5)
+E3_Last_AN$generation <- factor(E3_Last_AN$generation)
+head(E3_Last_AN)
+
+#Summary Statistics
+
+E3_Across_AN %>%
+  group_by(generation, Condition) %>%
+  get_summary_stats(similarity, type = "mean_sd")
+
+E3_Last_AN %>%
+  group_by(generation, Condition) %>%
+  get_summary_stats(similarity, type = "mean_sd")
+
+
+
+res.aov <- anova_test(
+  data = E3_Across_AN, dv = similarity, wid = ID,
+  between = Condition, within = generation
+)
+get_anova_table(res.aov)
+
+# Pairwise comparisons between conditions
+pwc_across <- E3_Across_AN %>%
+  group_by(generation) %>%
+  pairwise_t_test(similarity ~ Condition, p.adjust.method = "bonferroni")
+pwc_across
+
+pwc_last <- E3_Last_AN %>%
+  group_by(generation) %>%
+  pairwise_t_test(similarity ~ Condition, p.adjust.method = "bonferroni")
+pwc_last
+
+
+#pairwise comparisons between generations
+pwc_gen_across <- E3_Across_AN %>%
+  group_by(Condition) %>%
+  pairwise_t_test(
+    similarity ~ generation, paired = TRUE, 
+    p.adjust.method = "bonferroni"
+  ) %>%
+  select(-df, -statistic, -p) # Remove details
+pwc_gen_across
+
+pwc_gen_last <- E3_Last_AN %>%
+  group_by(Condition) %>%
+  pairwise_t_test(
+    similarity ~ generation, paired = TRUE, 
+    p.adjust.method = "bonferroni"
+  ) %>%
+  select(-df, -statistic, -p) # Remove details
+pwc_gen_last
+
+
+#Study Four: Canon vs NonCanon Across
+E4_Canon_Across <- read_excel("~Exp4_Canon_OrderComparisonAcrossSubs_Average_Spacy.xlsx")
+E4_NonCanon_Across <- read_excel("~Exp4_NonCanon_OrderComparisonAcrossSubs_Average_Spacy.xlsx")
+E4_Canon_Last <- read_excel("~Exp4_Canon_OrderComparisontoLast_Average_Spacy.xlsx")
+E4_NonCanon_Last <- read_excel("~Exp4_NonCanon_OrderComparisontoLast_Average_Spacy.xlsx")
+E4_NonCanon_Across <- read_excel("~Exp4_NonCanon_OrderComparisonAcrossSubs_Average_Spacy.xlsx")
+E4_Canon_First <- read_excel("~Exp4_Canon_OrderComparisontoFirst_Average_Spacy.xlsx")
+E4_NonCanon_First <- read_excel("~Exp4_NonCanon_OrderComparisontoFirst_Average_Spacy.xlsx")
+Condition<- rep("Canon",nrow(E4_Canon_Across))
+E4_Canon_Across_Temp <- cbind(E4_Canon_Across, Condition)
+E4_Canon_Last_Temp <- cbind(E4_Canon_Last, Condition)
+E4_Canon_First_Temp <- cbind(E4_Canon_First, Condition)
+Condition<- rep("NonCanon",nrow(E4_NonCanon_Across))
+E4_NonCanon_Across_Temp <- cbind(E4_NonCanon_Across, Condition)
+E4_NonCanon_Last_Temp <- cbind(E4_NonCanon_Last, Condition)
+E4_NonCanon_First_Temp <- cbind(E4_NonCanon_First, Condition)
+
+E4_Across <- rbind(E4_Canon_Across_Temp, E4_NonCanon_Across_Temp)
+E4_Last <- rbind(E4_Canon_Last_Temp, E4_NonCanon_Last_Temp)
+E4_First <- rbind(E4_Canon_First_Temp, E4_NonCanon_First_Temp)
+ID <- c(1:nrow(E4_Across))
+
+E4_Across_Use <- cbind(E4_Across, ID)
+names(E4_Across_Use)[3] <- 'G0v1'
+names(E4_Across_Use)[4] <- 'G1v2'
+names(E4_Across_Use)[5] <- 'G2v3'
+names(E4_Across_Use)[6] <- 'G3v4'
+names(E4_Across_Use)[7] <- 'G4v5'
+
+E4_Last_Use <- cbind(E4_Last, ID)
+names(E4_Last_Use)[3] <- 'G0v1'
+names(E4_Last_Use)[4] <- 'G1v2'
+names(E4_Last_Use)[5] <- 'G2v3'
+names(E4_Last_Use)[6] <- 'G3v4'
+names(E4_Last_Use)[7] <- 'G4v5'
+
+E4_First_Use <- cbind(E4_First, ID)
+names(E4_First_Use)[3] <- 'G0v1'
+names(E4_First_Use)[4] <- 'G0v2'
+names(E4_First_Use)[5] <- 'G0v3'
+names(E4_First_Use)[6] <- 'G0v4'
+names(E4_First_Use)[7] <- 'G0v5'
+
+E4_Across <- as_tibble(E4_Across_Use)
+E4_Across$ID <- factor(E4_Across$ID)
+
+E4_Last <- as_tibble(E4_Last_Use)
+E4_Last$ID <- factor(E4_Last$ID)
+
+E4_First <- as_tibble(E4_First_Use)
+E4_First$ID <- factor(E4_First$ID)
+
+E4_Across_AN <-aov_car(similarity ~ Condition*generation, data=E4_Across)
+
+
+E4_Across_AN <- E4_Across %>%
+  gather(key = "generation", value = "similarity", G0v1, G1v2, G2v3, G3v4, G4v5)
+E4_Across_AN$generation <- factor(E4_Across_AN$generation)
+head(E4_Across_AN)
+
+E4_Last_AN <- E4_Last %>%
+  gather(key = "generation", value = "similarity", G0v1, G1v2, G2v3, G3v4, G4v5)
+E4_Last_AN$generation <- factor(E4_Last_AN$generation)
+head(E4_Last_AN)
+
+E4_First_AN <- E4_First %>%
+  gather(key = "generation", value = "similarity", G0v1, G0v2, G0v3, G0v4, G0v5)
+E4_First_AN$generation <- factor(E4_First_AN$generation)
+head(E4_First_AN)
+
+# Summary Stats
+E4_Across_AN %>%
+  group_by(generation, Condition) %>%
+  get_summary_stats(similarity, type = "mean_sd")
+
+E4_Last_AN %>%
+  group_by(generation, Condition) %>%
+  get_summary_stats(similarity, type = "mean_sd")
+
+E4_First_AN %>%
+  group_by(generation, Condition) %>%
+  get_summary_stats(similarity, type = "mean_sd")
+# ANOVAS
+
+res.aov <- E4_Across_AN %>% anova_test(similarity ~ generation * Condition)
+res.aov
+
+first.aov <- E4_First_AN %>% anova_test(similarity ~ generation * Condition)
+first.aov
+
+# Pairwise comparisons between conditions
+pwc_across <- E4_Across_AN %>%
+  group_by(generation) %>%
+  pairwise_t_test(similarity ~ Condition, p.adjust.method = "bonferroni")
+pwc_across
+
+pwc_last <- E4_Last_AN %>%
+  group_by(generation) %>%
+  pairwise_t_test(similarity ~ Condition, p.adjust.method = "bonferroni")
+pwc_last
+
+pwc_first <- E4_First_AN %>%
+  group_by(generation) %>%
+  pairwise_t_test(similarity ~ Condition, p.adjust.method = "bonferroni")
+pwc_first
+
+
+#pairwise comparisons between generations
+pwc_gen_across <- E4_Across_AN %>%
+  group_by(Condition) %>%
+  pairwise_t_test(
+    similarity ~ generation, paired = FALSE, 
+    p.adjust.method = "bonferroni"
+  ) %>%
+  select(-df, -statistic, -p) # Remove details
+pwc_gen_across
+
+pwc_gen_last <- E4_Last_AN %>%
+  group_by(Condition) %>%
+  pairwise_t_test(
+    similarity ~ generation, paired = FALSE, 
+    p.adjust.method = "bonferroni"
+  ) %>%
+  select(-df, -statistic, -p) # Remove details
+pwc_gen_last
+
+pwc_gen_first <- E4_First_AN %>%
+  group_by(Condition) %>%
+  pairwise_t_test(
+    similarity ~ generation, paired = FALSE, 
+    p.adjust.method = "bonferroni"
+  ) %>%
+  select(-df, -statistic, -p) # Remove details
+pwc_gen_first
