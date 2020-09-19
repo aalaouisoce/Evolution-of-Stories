@@ -1,6 +1,6 @@
 All Text Data, Trimmed & Corrected --> StoryEvolution_AllData_Corrected.xlsx
   The sheets are separated out by Experiment (1-4) and Condition (Canon vs NonCanon)
 Initial Story Files: sophia_story (Study 1), sara_canon (Study 2-4), sara_scrambled (Study 2), sara_noncanon (Study 3-4) 
-Python Analysis Files, separated out by Study, Study 1-4 --> These output two types of files: 
+Python Analyses Files, separated out by Study, Study 1-4 --> These output two types of files: 
   1. Excel files that can then be fed into the RStudio stats code in the Statistical_Tests folder
   2. Figure files (png) of the findings
