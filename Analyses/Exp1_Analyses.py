@@ -523,7 +523,7 @@ print(Non_df_AllCorr_Last)
 Non_df_AllCorr_Last.to_excel("Exp1_OrderComparisontoLast_Spacy.xlsx",sheet_name='SentCorrelations')
 
 
-#With last Gen as Reference
+#With Last Gen as Reference
 
 AllSubs_Ordered_NOSTOP={}
 AllSubs_Compare_NOSTOP={}
